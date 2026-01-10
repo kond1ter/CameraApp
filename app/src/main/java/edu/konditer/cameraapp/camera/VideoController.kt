@@ -55,13 +55,12 @@ class VideoController(private val context: Context) {
                 
                 val recorder = Recorder.Builder()
                     .setQualitySelector(QualitySelector.fromOrderedList(
-                        listOf(Quality.UHD, Quality.FHD, Quality.HD, Quality.SD),
+                        listOf(Quality.FHD, Quality.HD, Quality.SD),
                         FallbackStrategy.lowerQualityOrHigherThan(Quality.SD)
                     ))
                     .build()
                 
                 videoCapture = VideoCapture.Builder(recorder)
-                    .setResolutionSelector(resolutionSelector)
                     .build()
                 
                 val cameraSelector = CameraSelector.Builder()
