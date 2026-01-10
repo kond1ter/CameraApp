@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cameraswitch
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.*
@@ -127,7 +128,7 @@ fun VideoScreen(
                         )
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Videocam,
+                            imageVector = Icons.Default.PhotoCamera,
                             contentDescription = "Camera",
                             modifier = Modifier.size(24.dp)
                         )

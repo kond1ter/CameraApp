@@ -179,11 +179,6 @@ class VideoFragment : Fragment() {
             onRecordingStopped = { uri ->
                 isRecording = false
                 recordingDuration = 0L
-                Toast.makeText(
-                    requireContext(),
-                    "Видео сохранено",
-                    Toast.LENGTH_SHORT
-                ).show()
             },
             onError = { exception ->
                 isRecording = false

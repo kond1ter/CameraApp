@@ -1,5 +1,6 @@
 package edu.konditer.cameraapp
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.widget.FrameLayout
 import androidx.fragment.app.FragmentContainerView
@@ -10,6 +11,8 @@ class MainActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
         setContentView(
             FragmentContainerView(this).apply {

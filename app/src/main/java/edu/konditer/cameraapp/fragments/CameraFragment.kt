@@ -196,7 +196,6 @@ class CameraFragment : Fragment() {
         
         checkPermissions(requestIfMissing = false)
         
-        // Если разрешения были предоставлены после возврата из настроек, инициализируем камеру
         val permissionsWereGranted = (!previousCameraPermission && hasCameraPermission) ||
                                      (!previousStoragePermission && hasStoragePermission)
         
