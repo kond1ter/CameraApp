@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -107,17 +108,27 @@ private fun PermissionItem(
         Manifest.permission.CAMERA -> Triple(
             Icons.Default.CameraAlt,
             "Камера",
-            "Необходимо для съёмки фотографий"
+            "Необходимо для съёмки фотографий и видео"
+        )
+        Manifest.permission.RECORD_AUDIO -> Triple(
+            Icons.Default.Mic,
+            "Микрофон",
+            "Необходимо для записи звука при съёмке видео"
         )
         Manifest.permission.READ_MEDIA_IMAGES -> Triple(
             Icons.Default.Folder,
             "Доступ к изображениям",
             "Необходимо для сохранения фотографий"
         )
+        Manifest.permission.READ_MEDIA_VIDEO -> Triple(
+            Icons.Default.Folder,
+            "Доступ к видео",
+            "Необходимо для сохранения видео"
+        )
         Manifest.permission.WRITE_EXTERNAL_STORAGE -> Triple(
             Icons.Default.Folder,
             "Запись файлов",
-            "Необходимо для сохранения фотографий"
+            "Необходимо для сохранения фотографий и видео"
         )
         else -> Triple(
             Icons.Default.Folder,

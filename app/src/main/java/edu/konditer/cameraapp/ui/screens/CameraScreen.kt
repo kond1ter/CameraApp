@@ -106,8 +106,8 @@ fun CameraScreen(
                         shape = RoundedCornerShape(16.dp),
                         contentPadding = PaddingValues(0.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            containerColor = Color.White.copy(alpha = 0.2f),
+                            contentColor = Color.White
                         )
                     ) {
                         Icon(
@@ -126,7 +126,7 @@ fun CameraScreen(
                         shape = CircleShape,
                         contentPadding = PaddingValues(0.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White.copy(alpha = 0.3f),
+                            containerColor = Color.White.copy(alpha = 0.2f),
                             contentColor = Color.White
                         )
                     ) {
@@ -146,8 +146,8 @@ fun CameraScreen(
                         shape = RoundedCornerShape(16.dp),
                         contentPadding = PaddingValues(0.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            containerColor = Color.White.copy(alpha = 0.2f),
+                            contentColor = Color.White
                         )
                     ) {
                         Icon(

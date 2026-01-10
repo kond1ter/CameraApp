@@ -1,53 +1,161 @@
 package edu.konditer.cameraapp.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import android.annotation.SuppressLint
+import androidx.camera.view.PreviewView
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cameraswitch
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import edu.konditer.cameraapp.ui.components.CameraPreview
 import edu.konditer.cameraapp.ui.theme.CameraAppTheme
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun VideoScreen(
+    previewView: PreviewView,
     onNavigateToCamera: () -> Unit,
     onNavigateToGallery: () -> Unit,
+    onToggleRecording: () -> Unit,
+    onSwitchCamera: () -> Unit,
+    isRecording: Boolean,
+    recordingDuration: Long,
 ) {
     CameraAppTheme {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .background(Color.Black),
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "VideoFragment",
-                style = MaterialTheme.typography.headlineMedium
-            )
-            Spacer(modifier = Modifier.height(32.dp))
-            Button(
-                onClick = onNavigateToCamera,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Go to Camera")
+            Box(modifier = Modifier.fillMaxWidth()) {
+                CameraPreview(
+                    previewView = previewView,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                if (isRecording) {
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .background(Color.Red, shape = CircleShape)
+                        )
+                        Text(
+                            text = formatDuration(recordingDuration),
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = onNavigateToGallery,
-                modifier = Modifier.fillMaxWidth()
+            
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Go to Gallery")
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = onNavigateToGallery,
+                        modifier = Modifier.size(64.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        contentPadding = PaddingValues(0.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White.copy(alpha = 0.2f),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PhotoLibrary,
+                            contentDescription = "Gallery",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    
+                    Button(
+                        onClick = onToggleRecording,
+                        modifier = Modifier.size(96.dp),
+                        shape = if (isRecording) RoundedCornerShape(16.dp) else CircleShape,
+                        contentPadding = PaddingValues(0.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White.copy(alpha = 0.2f),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .background(
+                                    Color.Red,
+                                    shape = if (isRecording) RoundedCornerShape(8.dp) else CircleShape
+                                )
+                        )
+                    }
+                    
+                    Button(
+                        onClick = onNavigateToCamera,
+                        modifier = Modifier.size(64.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        contentPadding = PaddingValues(0.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White.copy(alpha = 0.2f),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Videocam,
+                            contentDescription = "Camera",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+                
+                IconButton(
+                    onClick = onSwitchCamera,
+                    modifier = Modifier
+                        .padding(bottom = 16.dp)
+                        .size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Cameraswitch,
+                        contentDescription = "Switch Camera",
+                        tint = Color.White,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
         }
     }
 }
 
+@SuppressLint("DefaultLocale")
+private fun formatDuration(milliseconds: Long): String {
+    val seconds = TimeUnit.MILLISECONDS.toSeconds(milliseconds)
+    val minutes = seconds / 60
+    val remainingSeconds = seconds % 60
+    return String.format("%02d:%02d", minutes, remainingSeconds)
+}
