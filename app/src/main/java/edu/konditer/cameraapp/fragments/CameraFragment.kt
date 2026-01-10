@@ -1,9 +1,12 @@
 package edu.konditer.cameraapp.fragments
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,6 +25,7 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import edu.konditer.cameraapp.camera.CameraController
 import edu.konditer.cameraapp.ui.screens.CameraScreen
+import edu.konditer.cameraapp.ui.screens.PermissionsScreen
 
 class CameraFragment : Fragment() {
 
@@ -41,10 +45,8 @@ class CameraFragment : Fragment() {
             permissions[Manifest.permission.WRITE_EXTERNAL_STORAGE] ?: false
         }
         
-        if (hasCameraPermission && previewView != null) {
+        if (hasCameraPermission && hasStoragePermission && previewView != null) {
             initializeCamera()
-        } else if (!hasCameraPermission) {
-            Toast.makeText(requireContext(), "Camera permission is required", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -66,7 +68,7 @@ class CameraFragment : Fragment() {
         )
     }
     
-    private fun checkPermissions() {
+    private fun checkPermissions(requestIfMissing: Boolean = true) {
         hasCameraPermission = ContextCompat.checkSelfPermission(
             requireContext(),
             Manifest.permission.CAMERA
@@ -84,7 +86,7 @@ class CameraFragment : Fragment() {
             ) == PackageManager.PERMISSION_GRANTED
         }
         
-        if (!hasCameraPermission || !hasStoragePermission) {
+        if (requestIfMissing && (!hasCameraPermission || !hasStoragePermission)) {
             val permissionsToRequest = mutableListOf<String>()
             if (!hasCameraPermission) {
                 permissionsToRequest.add(Manifest.permission.CAMERA)
@@ -98,6 +100,31 @@ class CameraFragment : Fragment() {
             }
             permissionLauncher.launch(permissionsToRequest.toTypedArray())
         }
+    }
+    
+    private fun getMissingPermissions(): List<String> {
+        val missingPermissions = mutableListOf<String>()
+        
+        if (!hasCameraPermission) {
+            missingPermissions.add(Manifest.permission.CAMERA)
+        }
+        
+        if (!hasStoragePermission) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                missingPermissions.add(Manifest.permission.READ_MEDIA_IMAGES)
+            } else {
+                missingPermissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
+        }
+        
+        return missingPermissions
+    }
+    
+    private fun openAppSettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.fromParts("package", requireContext().packageName, null)
+        }
+        startActivity(intent)
     }
     
     private fun initializeCamera() {
@@ -116,7 +143,7 @@ class CameraFragment : Fragment() {
             onError = { exception ->
                 Toast.makeText(
                     requireContext(),
-                    "Ошибка, не удалось сохранить фото",
+                    "Ошибка: не удалось сохранить фото",
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -161,6 +188,25 @@ class CameraFragment : Fragment() {
             initializeCamera()
         }
     }
+    
+    override fun onResume() {
+        super.onResume()
+        val previousCameraPermission = hasCameraPermission
+        val previousStoragePermission = hasStoragePermission
+        
+        checkPermissions(requestIfMissing = false)
+        
+        // Если разрешения были предоставлены после возврата из настроек, инициализируем камеру
+        val permissionsWereGranted = (!previousCameraPermission && hasCameraPermission) ||
+                                     (!previousStoragePermission && hasStoragePermission)
+        
+        if (permissionsWereGranted && 
+            hasCameraPermission && 
+            hasStoragePermission && 
+            previewView != null) {
+            initializeCamera()
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -172,7 +218,9 @@ class CameraFragment : Fragment() {
         return ComposeView(requireContext()).apply {
             setContent {
                 val preview = previewView
-                if (hasCameraPermission && preview != null) {
+                val missingPermissions = getMissingPermissions()
+                
+                if (hasCameraPermission && hasStoragePermission && preview != null) {
                     CameraScreen(
                         previewView = preview,
                         onNavigateToVideo = { onNavigateToVideo() },
@@ -180,8 +228,13 @@ class CameraFragment : Fragment() {
                         onTakePhoto = { onTakePhoto() },
                         onSwitchCamera = { onSwitchCamera(preview) }
                     )
+                } else if (missingPermissions.isNotEmpty()) {
+                    PermissionsScreen(
+                        missingPermissions = missingPermissions,
+                        onOpenSettings = { openAppSettings() }
+                    )
                 } else {
-                    Box { /* Waiting for permissions */ }
+                    Box { }
                 }
             }
         }
