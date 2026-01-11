@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -54,7 +53,6 @@ data class MediaItem(
         IMAGE, VIDEO
     }
 }
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GalleryScreen(
     onNavigateBack: () -> Unit,
@@ -224,7 +222,6 @@ private fun EmptyGalleryView(
         }
     }
 }
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MediaGrid(
     items: List<MediaItem>,
@@ -290,7 +287,7 @@ private fun MediaThumbnail(
         }
         Surface(
             color = Color.Black.copy(alpha = 0.6f),
-            shape = RoundedCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+            shape = RoundedCornerShape(8.dp),
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(4.dp)
@@ -303,14 +300,14 @@ private fun MediaThumbnail(
                 },
                 contentDescription = null,
                 modifier = Modifier
-                    .size(16.dp)
+                    .size(24.dp)
                     .padding(4.dp),
                 tint = Color.White
             )
         }
         Surface(
             color = Color.Black.copy(alpha = 0.6f),
-            shape = RoundedCornerShape(topEnd = 8.dp, bottomStart = 8.dp),
+            shape = RoundedCornerShape(8.dp),
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(4.dp)
@@ -324,7 +321,6 @@ private fun MediaThumbnail(
         }
     }
 }
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FullscreenMediaViewer(
     item: MediaItem,
