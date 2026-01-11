@@ -187,7 +187,7 @@ private fun EmptyGalleryView(
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Создайте свои первые фото или видео",
+            text = "Создайте новые фото или видео",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             textAlign = TextAlign.Center
