@@ -4,7 +4,6 @@ import android.content.ContentValues
 import android.content.Context
 import android.os.Build
 import android.provider.MediaStore
-import android.view.Surface
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.*
@@ -127,7 +126,6 @@ class UnifiedCameraController(private val context: Context) {
             }
         }
         
-        // Восстанавливаем зум
         camera?.cameraControl?.setZoomRatio(currentZoomRatio)
     }
     
@@ -287,13 +285,10 @@ class UnifiedCameraController(private val context: Context) {
         
         val zoomState = cameraInfo.zoomState.value
         if (zoomState == null) {
-            // Zoom state еще не готов, пытаемся применить зум напрямую
-            // Камера сама ограничит значение допустимым диапазоном
             currentZoomRatio = ratio
             try {
                 cameraControl.setZoomRatio(ratio)
             } catch (e: Exception) {
-                // Игнорируем ошибки, если zoomState еще не готов
             }
             return
         }
@@ -325,7 +320,6 @@ class UnifiedCameraController(private val context: Context) {
             stopRecording()
         }
         
-        // Если режим не изменился и камера уже инициализирована, просто обновляем preview
         if (currentMode == newMode && camera != null && cameraProvider != null) {
             preview?.setSurfaceProvider(previewView.surfaceProvider)
             return

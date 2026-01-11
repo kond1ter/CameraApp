@@ -58,5 +58,6 @@ dependencies {
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

@@ -184,10 +184,10 @@ class VideoFragment : Fragment() {
     private fun getRotationFromOrientation(orientation: Int): Int {
         return when {
             orientation == OrientationEventListener.ORIENTATION_UNKNOWN -> Surface.ROTATION_0
-            orientation >= 45 && orientation < 135 -> Surface.ROTATION_270 // Landscape reversed
-            orientation >= 135 && orientation < 225 -> Surface.ROTATION_180 // Portrait reversed
-            orientation >= 225 && orientation < 315 -> Surface.ROTATION_90 // Landscape
-            else -> Surface.ROTATION_0 // Portrait
+            orientation >= 45 && orientation < 135 -> Surface.ROTATION_270
+            orientation >= 135 && orientation < 225 -> Surface.ROTATION_180
+            orientation >= 225 && orientation < 315 -> Surface.ROTATION_90
+            else -> Surface.ROTATION_0
         }
     }
     
@@ -282,6 +282,12 @@ class VideoFragment : Fragment() {
         orientationEventListener = null
         previewView = null
     }
+    
+    private fun isSystemInDarkTheme(context: Context): Boolean {
+        val nightModeFlags = context.resources.configuration.uiMode and 
+            android.content.res.Configuration.UI_MODE_NIGHT_MASK
+        return nightModeFlags == android.content.res.Configuration.UI_MODE_NIGHT_YES
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -291,13 +297,19 @@ class VideoFragment : Fragment() {
         
         val windowInsetsController = WindowCompat.getInsetsController(window, view)
         windowInsetsController.let { controller ->
-            controller.hide(WindowInsetsCompat.Type.statusBars())
+            val missingPermissions = getMissingPermissions()
+            if (missingPermissions.isNotEmpty()) {
+                window.statusBarColor = android.graphics.Color.TRANSPARENT
+                controller.show(WindowInsetsCompat.Type.statusBars())
+                controller.isAppearanceLightStatusBars = !isSystemInDarkTheme(requireContext())
+            } else {
+                controller.hide(WindowInsetsCompat.Type.statusBars())
+            }
             controller.systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
         
         if (hasCameraPermission && hasStoragePermission && hasAudioPermission && previewView != null) {
-            // При возврате на экран, переключаем камеру в режим видео
             cameraController?.switchMode(
                 previewView = previewView!!,
                 lifecycleOwner = requireActivity(),
@@ -316,6 +328,19 @@ class VideoFragment : Fragment() {
         
         checkPermissions(requestIfMissing = false)
         
+        val window = requireActivity().window
+        val windowInsetsController = WindowCompat.getInsetsController(window, requireView())
+        val missingPermissions = getMissingPermissions()
+        windowInsetsController.let { controller ->
+            if (missingPermissions.isNotEmpty()) {
+                window.statusBarColor = android.graphics.Color.TRANSPARENT
+                controller.show(WindowInsetsCompat.Type.statusBars())
+                controller.isAppearanceLightStatusBars = !isSystemInDarkTheme(requireContext())
+            } else {
+                controller.hide(WindowInsetsCompat.Type.statusBars())
+            }
+        }
+        
         val permissionsWereGranted = (!previousCameraPermission && hasCameraPermission) ||
                                      (!previousStoragePermission && hasStoragePermission) ||
                                      (!previousAudioPermission && hasAudioPermission)
@@ -331,7 +356,6 @@ class VideoFragment : Fragment() {
                 newMode = CameraMode.VIDEO
             ) ?: initializeCamera()
         } else if (hasCameraPermission && hasStoragePermission && hasAudioPermission && previewView != null) {
-            // Если разрешения уже были, просто убеждаемся, что камера в правильном режиме
             cameraController?.switchMode(
                 previewView = previewView!!,
                 lifecycleOwner = requireActivity(),

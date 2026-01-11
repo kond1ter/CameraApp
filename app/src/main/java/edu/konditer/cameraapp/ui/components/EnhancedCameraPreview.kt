@@ -1,5 +1,4 @@
 package edu.konditer.cameraapp.ui.components
-
 import android.annotation.SuppressLint
 import android.view.MotionEvent
 import android.view.View
@@ -22,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import kotlin.math.abs
 import kotlin.math.sqrt
-
 @SuppressLint("ClickableViewAccessibility")
 @Composable
 fun EnhancedCameraPreview(
@@ -33,16 +31,11 @@ fun EnhancedCameraPreview(
     onZoomChanged: ((Float) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    // Используем rememberUpdatedState для актуальных callback'ов
     val onZoomChangedState = rememberUpdatedState(onZoomChanged)
     val onTapToFocusState = rememberUpdatedState(onTapToFocus)
     val getCurrentZoomState = rememberUpdatedState(getCurrentZoom)
     val getZoomRangeState = rememberUpdatedState(getZoomRange)
-    
-    // Локальное состояние для отображения
     var displayZoom by remember { mutableStateOf(getCurrentZoom()) }
-    
-    // Состояние жестов
     val gestureState = remember {
         object {
             var isZooming = false
@@ -52,8 +45,6 @@ fun EnhancedCameraPreview(
             var tapDownY = 0f
         }
     }
-    
-    // Создаем touch listener
     val touchListener = remember(onZoomChangedState, onTapToFocusState, getCurrentZoomState, getZoomRangeState) {
         View.OnTouchListener { _, event ->
             when (event.actionMasked) {
@@ -67,7 +58,6 @@ fun EnhancedCameraPreview(
                 MotionEvent.ACTION_POINTER_DOWN -> {
                     if (event.pointerCount == 2) {
                         gestureState.isZooming = true
-                        // Получаем актуальное значение зума прямо из контроллера
                         gestureState.gestureStartZoom = getCurrentZoomState.value()
                         gestureState.initialDistance = getDistance(event)
                     }
@@ -79,12 +69,10 @@ fun EnhancedCameraPreview(
                         if (gestureState.initialDistance > 0f) {
                             val scale = currentDistance / gestureState.initialDistance
                             val zoomRange = getZoomRangeState.value()
-                            // Ограничиваем значение зума допустимым диапазоном
                             val newZoom = (gestureState.gestureStartZoom * scale).coerceIn(
                                 zoomRange.start,
                                 zoomRange.endInclusive
                             )
-                            // Обновляем displayZoom при изменении зума
                             displayZoom = newZoom
                             onZoomChangedState.value?.invoke(newZoom)
                         }
@@ -95,7 +83,6 @@ fun EnhancedCameraPreview(
                     if (event.pointerCount == 1) {
                         gestureState.isZooming = false
                         gestureState.initialDistance = 0f
-                        // Обновляем displayZoom из контроллера после окончания жеста
                         displayZoom = getCurrentZoomState.value()
                     }
                     true
@@ -106,14 +93,12 @@ fun EnhancedCameraPreview(
                     }
                     gestureState.isZooming = false
                     gestureState.initialDistance = 0f
-                    // Обновляем displayZoom из контроллера после окончания жеста
                     displayZoom = getCurrentZoomState.value()
                     true
                 }
                 MotionEvent.ACTION_CANCEL -> {
                     gestureState.isZooming = false
                     gestureState.initialDistance = 0f
-                    // Обновляем displayZoom из контроллера при отмене жеста
                     displayZoom = getCurrentZoomState.value()
                     true
                 }
@@ -121,7 +106,6 @@ fun EnhancedCameraPreview(
             }
         }
     }
-    
     Box(modifier = modifier.fillMaxWidth().aspectRatio(3f / 4f)) {
         AndroidView(
             factory = { 
@@ -143,8 +127,6 @@ fun EnhancedCameraPreview(
             },
             modifier = Modifier.fillMaxSize()
         )
-        
-        // Индикатор зума
         if (abs(displayZoom - 1.0f) > 0.01f) {
             Box(
                 modifier = Modifier
@@ -170,7 +152,6 @@ fun EnhancedCameraPreview(
         }
     }
 }
-
 private fun getDistance(event: MotionEvent): Float {
     val dx = event.getX(0) - event.getX(1)
     val dy = event.getY(0) - event.getY(1)

@@ -1,5 +1,4 @@
 package edu.konditer.cameraapp.ui.screens
-
 import android.Manifest
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,7 +14,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import edu.konditer.cameraapp.ui.theme.CameraAppTheme
-
 @Composable
 fun PermissionsScreen(
     missingPermissions: List<String>,
@@ -34,17 +32,13 @@ fun PermissionsScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Иконка или заголовок
                 Icon(
                     imageVector = Icons.Default.CameraAlt,
                     contentDescription = null,
                     modifier = Modifier.size(64.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
-                
                 Spacer(modifier = Modifier.height(24.dp))
-                
-                // Заголовок
                 Text(
                     text = "Необходимы разрешения",
                     style = MaterialTheme.typography.headlineSmall,
@@ -52,10 +46,7 @@ fun PermissionsScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center
                 )
-                
                 Spacer(modifier = Modifier.height(16.dp))
-                
-                // Описание
                 Text(
                     text = "Для работы приложения необходимо предоставить следующие разрешения:",
                     style = MaterialTheme.typography.bodyLarge,
@@ -63,10 +54,7 @@ fun PermissionsScreen(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
-                
                 Spacer(modifier = Modifier.height(32.dp))
-                
-                // Список разрешений в карточках
                 missingPermissions.forEach { permission ->
                     PermissionItem(
                         permission = permission,
@@ -75,10 +63,7 @@ fun PermissionsScreen(
                             .padding(vertical = 8.dp)
                     )
                 }
-                
                 Spacer(modifier = Modifier.height(32.dp))
-                
-                // Кнопка открытия настроек
                 Button(
                     onClick = onOpenSettings,
                     modifier = Modifier.fillMaxWidth(),
@@ -98,7 +83,6 @@ fun PermissionsScreen(
         }
     }
 }
-
 @Composable
 private fun PermissionItem(
     permission: String,
@@ -136,7 +120,6 @@ private fun PermissionItem(
             "Необходимо для работы приложения"
         )
     }
-    
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
@@ -157,9 +140,7 @@ private fun PermissionItem(
                 modifier = Modifier.size(32.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
-            
             Spacer(modifier = Modifier.width(16.dp))
-            
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -169,9 +150,7 @@ private fun PermissionItem(
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
                 Spacer(modifier = Modifier.height(4.dp))
-                
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodyMedium,

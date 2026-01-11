@@ -161,10 +161,10 @@ class CameraFragment : Fragment() {
     private fun getRotationFromOrientation(orientation: Int): Int {
         return when {
             orientation == OrientationEventListener.ORIENTATION_UNKNOWN -> Surface.ROTATION_0
-            orientation >= 45 && orientation < 135 -> Surface.ROTATION_270 // Landscape reversed
-            orientation >= 135 && orientation < 225 -> Surface.ROTATION_180 // Portrait reversed
-            orientation >= 225 && orientation < 315 -> Surface.ROTATION_90 // Landscape
-            else -> Surface.ROTATION_0 // Portrait
+            orientation >= 45 && orientation < 135 -> Surface.ROTATION_270
+            orientation >= 135 && orientation < 225 -> Surface.ROTATION_180
+            orientation >= 225 && orientation < 315 -> Surface.ROTATION_90
+            else -> Surface.ROTATION_0
         }
     }
     
@@ -237,7 +237,14 @@ class CameraFragment : Fragment() {
         
         val windowInsetsController = WindowCompat.getInsetsController(window, view)
         windowInsetsController.let { controller ->
-            controller.hide(WindowInsetsCompat.Type.statusBars())
+            val missingPermissions = getMissingPermissions()
+            if (missingPermissions.isNotEmpty()) {
+                window.statusBarColor = android.graphics.Color.TRANSPARENT
+                controller.show(WindowInsetsCompat.Type.statusBars())
+                controller.isAppearanceLightStatusBars = !isSystemInDarkTheme(requireContext())
+            } else {
+                controller.hide(WindowInsetsCompat.Type.statusBars())
+            }
             controller.systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
@@ -251,6 +258,12 @@ class CameraFragment : Fragment() {
             setupOrientationListener()
             updateOrientation()
         }
+    }
+    
+    private fun isSystemInDarkTheme(context: Context): Boolean {
+        val nightModeFlags = context.resources.configuration.uiMode and 
+            android.content.res.Configuration.UI_MODE_NIGHT_MASK
+        return nightModeFlags == android.content.res.Configuration.UI_MODE_NIGHT_YES
     }
     
     override fun onResume() {

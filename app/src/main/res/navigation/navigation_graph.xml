@@ -31,7 +31,14 @@
     <fragment
         android:id="@+id/galleryFragment"
         android:name="edu.konditer.cameraapp.fragments.GalleryFragment"
-        android:label="GalleryFragment" />
+        android:label="GalleryFragment">
+        <action
+            android:id="@+id/action_galleryFragment_to_cameraFragment"
+            app:destination="@id/cameraFragment" />
+        <action
+            android:id="@+id/action_galleryFragment_to_videoFragment"
+            app:destination="@id/videoFragment" />
+    </fragment>
 
 </navigation>
 

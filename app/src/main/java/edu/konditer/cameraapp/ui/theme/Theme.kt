@@ -16,7 +16,6 @@ fun CameraAppTheme(
     val context = LocalContext.current
     val colorScheme = when {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            // Android 12+ (API 31+): используем Dynamic Colors (Material You)
             if (darkTheme) {
                 dynamicDarkColorScheme(context)
             } else {
@@ -24,11 +23,9 @@ fun CameraAppTheme(
             }
         }
         darkTheme -> {
-            // Для старых версий используем стандартную темную тему
             androidx.compose.material3.darkColorScheme()
         }
         else -> {
-            // Для старых версий используем стандартную светлую тему
             androidx.compose.material3.lightColorScheme()
         }
     }
