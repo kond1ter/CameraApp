@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import edu.konditer.cameraapp.ui.components.CameraPreview
+import edu.konditer.cameraapp.ui.components.EnhancedCameraPreview
 import edu.konditer.cameraapp.ui.theme.CameraAppTheme
 import java.util.concurrent.TimeUnit
 
@@ -32,6 +32,10 @@ fun VideoScreen(
     onSwitchCamera: () -> Unit,
     isRecording: Boolean,
     recordingDuration: Long,
+    onTapToFocus: (Float, Float) -> Unit,
+    onZoomChanged: (Float) -> Unit,
+    getCurrentZoom: () -> Float,
+    getZoomRange: () -> ClosedFloatingPointRange<Float>,
 ) {
     CameraAppTheme {
         Column(
@@ -41,8 +45,12 @@ fun VideoScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
-                CameraPreview(
+                EnhancedCameraPreview(
                     previewView = previewView,
+                    getCurrentZoom = getCurrentZoom,
+                    getZoomRange = getZoomRange,
+                    onTapToFocus = onTapToFocus,
+                    onZoomChanged = onZoomChanged,
                     modifier = Modifier.fillMaxWidth()
                 )
                 

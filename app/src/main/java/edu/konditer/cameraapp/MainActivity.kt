@@ -6,8 +6,11 @@ import android.widget.FrameLayout
 import androidx.fragment.app.FragmentContainerView
 import androidx.navigation.fragment.NavHostFragment
 import edu.konditer.cameraapp.activities.BaseActivity
+import edu.konditer.cameraapp.camera.UnifiedCameraController
 
 class MainActivity : BaseActivity() {
+    
+    val cameraController by lazy { UnifiedCameraController(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,5 +34,10 @@ class MainActivity : BaseActivity() {
                 .setPrimaryNavigationFragment(navHost)
                 .commit()
         }
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        cameraController.cleanup()
     }
 }

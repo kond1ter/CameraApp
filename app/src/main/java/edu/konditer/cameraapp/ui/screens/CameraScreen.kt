@@ -38,7 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import edu.konditer.cameraapp.ui.components.CameraPreview
+import edu.konditer.cameraapp.ui.components.EnhancedCameraPreview
 import edu.konditer.cameraapp.ui.theme.CameraAppTheme
 
 @Composable
@@ -48,6 +48,10 @@ fun CameraScreen(
     onNavigateToGallery: () -> Unit,
     onTakePhoto: () -> Unit,
     onSwitchCamera: () -> Unit,
+    onTapToFocus: (Float, Float) -> Unit,
+    onZoomChanged: (Float) -> Unit,
+    getCurrentZoom: () -> Float,
+    getZoomRange: () -> ClosedFloatingPointRange<Float>,
 ) {
     CameraAppTheme {
         var showFlash by remember { mutableStateOf(false) }
@@ -73,8 +77,12 @@ fun CameraScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
-                CameraPreview(
+                EnhancedCameraPreview(
                     previewView = previewView,
+                    getCurrentZoom = getCurrentZoom,
+                    getZoomRange = getZoomRange,
+                    onTapToFocus = onTapToFocus,
+                    onZoomChanged = onZoomChanged,
                     modifier = Modifier.fillMaxWidth()
                 )
                 

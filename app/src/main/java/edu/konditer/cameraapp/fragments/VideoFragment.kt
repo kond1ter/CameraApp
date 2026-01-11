@@ -1,13 +1,18 @@
 package edu.konditer.cameraapp.fragments
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.hardware.display.DisplayManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.view.Display
 import android.view.LayoutInflater
+import android.view.OrientationEventListener
+import android.view.Surface
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
@@ -24,13 +29,17 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import edu.konditer.cameraapp.camera.VideoController
+import edu.konditer.cameraapp.MainActivity
+import edu.konditer.cameraapp.camera.CameraMode
+import edu.konditer.cameraapp.camera.UnifiedCameraController
 import edu.konditer.cameraapp.ui.screens.PermissionsScreen
 import edu.konditer.cameraapp.ui.screens.VideoScreen
 
 class VideoFragment : Fragment() {
 
-    private var videoController: VideoController? = null
+    private val cameraController: UnifiedCameraController?
+        get() = (requireActivity() as? MainActivity)?.cameraController
+    
     private var previewView: PreviewView? = null
     
     private var hasCameraPermission by mutableStateOf(false)
@@ -38,6 +47,9 @@ class VideoFragment : Fragment() {
     private var hasAudioPermission by mutableStateOf(false)
     private var isRecording by mutableStateOf(false)
     private var recordingDuration by mutableStateOf(0L)
+    
+    private var orientationEventListener: OrientationEventListener? = null
+    private var currentOrientation = Surface.ROTATION_0
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -50,14 +62,14 @@ class VideoFragment : Fragment() {
             permissions[Manifest.permission.WRITE_EXTERNAL_STORAGE] ?: false
         }
         
-        if (hasCameraPermission && hasStoragePermission && previewView != null) {
+        if (hasCameraPermission && hasStoragePermission && hasAudioPermission && previewView != null) {
             initializeCamera()
         }
     }
 
     private val onBackPressedCallback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
-            if (isRecording) {
+            if (cameraController?.isRecording() == true) {
                 stopRecording()
             } else {
                 requireActivity().finish()
@@ -66,16 +78,21 @@ class VideoFragment : Fragment() {
     }
 
     private fun onNavigateToCamera() {
-        if (isRecording) {
+        if (cameraController?.isRecording() == true) {
             stopRecording()
         }
+        cameraController?.switchMode(
+            previewView ?: return,
+            requireActivity(),
+            CameraMode.PHOTO
+        )
         findNavController().navigate(
             VideoFragmentDirections.actionVideoFragmentToCameraFragment()
         )
     }
 
     private fun onNavigateToGallery() {
-        if (isRecording) {
+        if (cameraController?.isRecording() == true) {
             stopRecording()
         }
         findNavController().navigate(
@@ -154,16 +171,54 @@ class VideoFragment : Fragment() {
     
     private fun initializeCamera() {
         previewView?.let { view ->
-            videoController = VideoController(requireContext())
-            videoController?.startCamera(
+            cameraController?.switchMode(
                 previewView = view,
-                lifecycleOwner = viewLifecycleOwner,
+                lifecycleOwner = requireActivity(),
+                newMode = CameraMode.VIDEO
             )
+            setupOrientationListener()
+            updateOrientation()
         }
     }
     
+    private fun getRotationFromOrientation(orientation: Int): Int {
+        return when {
+            orientation == OrientationEventListener.ORIENTATION_UNKNOWN -> Surface.ROTATION_0
+            orientation >= 45 && orientation < 135 -> Surface.ROTATION_270 // Landscape reversed
+            orientation >= 135 && orientation < 225 -> Surface.ROTATION_180 // Portrait reversed
+            orientation >= 225 && orientation < 315 -> Surface.ROTATION_90 // Landscape
+            else -> Surface.ROTATION_0 // Portrait
+        }
+    }
+    
+    private fun updateOrientation() {
+        val displayManager = requireContext().getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+        val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
+        val rotation = display?.rotation ?: Surface.ROTATION_0
+        if (rotation != currentOrientation) {
+            currentOrientation = rotation
+            cameraController?.setTargetRotation(rotation)
+        }
+    }
+    
+    private fun setupOrientationListener() {
+        orientationEventListener = object : OrientationEventListener(requireContext()) {
+            override fun onOrientationChanged(orientation: Int) {
+                if (orientation == ORIENTATION_UNKNOWN) return
+                
+                val newRotation = getRotationFromOrientation(orientation)
+                
+                if (newRotation != currentOrientation) {
+                    currentOrientation = newRotation
+                    cameraController?.setTargetRotation(newRotation)
+                }
+            }
+        }
+        orientationEventListener?.enable()
+    }
+    
     private fun toggleRecording() {
-        if (isRecording) {
+        if (cameraController?.isRecording() == true) {
             stopRecording()
         } else {
             startRecording()
@@ -171,7 +226,7 @@ class VideoFragment : Fragment() {
     }
     
     private fun startRecording() {
-        videoController?.startRecording(
+        cameraController?.startRecording(
             onRecordingStarted = {
                 isRecording = true
                 recordingDuration = 0L
@@ -179,6 +234,11 @@ class VideoFragment : Fragment() {
             onRecordingStopped = { uri ->
                 isRecording = false
                 recordingDuration = 0L
+                Toast.makeText(
+                    requireContext(),
+                    "Видео сохранено",
+                    Toast.LENGTH_SHORT
+                ).show()
             },
             onError = { exception ->
                 isRecording = false
@@ -193,16 +253,16 @@ class VideoFragment : Fragment() {
     }
     
     private fun stopRecording() {
-        videoController?.stopRecording()
+        cameraController?.stopRecording()
         isRecording = false
         recordingDuration = 0L
     }
     
     private fun onSwitchCamera(preview: PreviewView) {
         preview.let { view ->
-            videoController?.switchCamera(
+            cameraController?.switchCamera(
                 previewView = view,
-                lifecycleOwner = viewLifecycleOwner,
+                lifecycleOwner = viewLifecycleOwner
             )
         }
     }
@@ -215,10 +275,11 @@ class VideoFragment : Fragment() {
     
     override fun onDestroyView() {
         super.onDestroyView()
-        if (isRecording) {
+        if (cameraController?.isRecording() == true) {
             stopRecording()
         }
-        videoController?.cleanup()
+        orientationEventListener?.disable()
+        orientationEventListener = null
         previewView = null
     }
 
@@ -235,8 +296,15 @@ class VideoFragment : Fragment() {
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
         
-        if (hasCameraPermission && previewView != null) {
-            initializeCamera()
+        if (hasCameraPermission && hasStoragePermission && hasAudioPermission && previewView != null) {
+            // При возврате на экран, переключаем камеру в режим видео
+            cameraController?.switchMode(
+                previewView = previewView!!,
+                lifecycleOwner = requireActivity(),
+                newMode = CameraMode.VIDEO
+            ) ?: initializeCamera()
+            setupOrientationListener()
+            updateOrientation()
         }
     }
     
@@ -257,7 +325,18 @@ class VideoFragment : Fragment() {
             hasStoragePermission && 
             hasAudioPermission && 
             previewView != null) {
-            initializeCamera()
+            cameraController?.switchMode(
+                previewView = previewView!!,
+                lifecycleOwner = requireActivity(),
+                newMode = CameraMode.VIDEO
+            ) ?: initializeCamera()
+        } else if (hasCameraPermission && hasStoragePermission && hasAudioPermission && previewView != null) {
+            // Если разрешения уже были, просто убеждаемся, что камера в правильном режиме
+            cameraController?.switchMode(
+                previewView = previewView!!,
+                lifecycleOwner = requireActivity(),
+                newMode = CameraMode.VIDEO
+            )
         }
     }
 
@@ -276,7 +355,7 @@ class VideoFragment : Fragment() {
                 LaunchedEffect(key1 = isRecording) {
                     if (isRecording) {
                         recordingDuration = 0L
-                        while (isRecording) {
+                        while (cameraController?.isRecording() == true) {
                             delay(1000)
                             recordingDuration += 1000
                         }
@@ -292,8 +371,16 @@ class VideoFragment : Fragment() {
                         onNavigateToGallery = { onNavigateToGallery() },
                         onToggleRecording = { toggleRecording() },
                         onSwitchCamera = { onSwitchCamera(preview) },
-                        isRecording = isRecording,
-                        recordingDuration = recordingDuration
+                        isRecording = cameraController?.isRecording() ?: false,
+                        recordingDuration = recordingDuration,
+                        onTapToFocus = { x, y ->
+                            cameraController?.focusOnPoint(x, y, preview)
+                        },
+                        onZoomChanged = { zoomRatio ->
+                            cameraController?.setZoomRatio(zoomRatio)
+                        },
+                        getCurrentZoom = { cameraController?.getCurrentZoom() ?: 1f },
+                        getZoomRange = { cameraController?.getZoomRange() ?: 1f..10f }
                     )
                 } else if (missingPermissions.isNotEmpty()) {
                     PermissionsScreen(

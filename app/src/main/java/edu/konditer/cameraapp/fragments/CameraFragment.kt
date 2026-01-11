@@ -1,13 +1,18 @@
 package edu.konditer.cameraapp.fragments
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.hardware.display.DisplayManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.view.Display
 import android.view.LayoutInflater
+import android.view.OrientationEventListener
+import android.view.Surface
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
@@ -23,17 +28,24 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import edu.konditer.cameraapp.camera.CameraController
+import edu.konditer.cameraapp.MainActivity
+import edu.konditer.cameraapp.camera.CameraMode
+import edu.konditer.cameraapp.camera.UnifiedCameraController
 import edu.konditer.cameraapp.ui.screens.CameraScreen
 import edu.konditer.cameraapp.ui.screens.PermissionsScreen
 
 class CameraFragment : Fragment() {
 
-    private var cameraController: CameraController? = null
+    private val cameraController: UnifiedCameraController?
+        get() = (requireActivity() as? MainActivity)?.cameraController
+    
     private var previewView: PreviewView? = null
     
     private var hasCameraPermission by mutableStateOf(false)
     private var hasStoragePermission by mutableStateOf(false)
+    
+    private var orientationEventListener: OrientationEventListener? = null
+    private var currentOrientation = Surface.ROTATION_0
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -57,6 +69,13 @@ class CameraFragment : Fragment() {
     }
 
     private fun onNavigateToVideo() {
+        previewView?.let { view ->
+            cameraController?.switchMode(
+                previewView = view,
+                lifecycleOwner = requireActivity(),
+                newMode = CameraMode.VIDEO
+            )
+        }
         findNavController().navigate(
             CameraFragmentDirections.actionCameraFragmentToVideoFragment()
         )
@@ -129,12 +148,50 @@ class CameraFragment : Fragment() {
     
     private fun initializeCamera() {
         previewView?.let { view ->
-            cameraController = CameraController(requireContext())
             cameraController?.startCamera(
                 previewView = view,
-                lifecycleOwner = viewLifecycleOwner,
+                lifecycleOwner = requireActivity(),
+                mode = CameraMode.PHOTO
             )
+            setupOrientationListener()
+            updateOrientation()
         }
+    }
+    
+    private fun getRotationFromOrientation(orientation: Int): Int {
+        return when {
+            orientation == OrientationEventListener.ORIENTATION_UNKNOWN -> Surface.ROTATION_0
+            orientation >= 45 && orientation < 135 -> Surface.ROTATION_270 // Landscape reversed
+            orientation >= 135 && orientation < 225 -> Surface.ROTATION_180 // Portrait reversed
+            orientation >= 225 && orientation < 315 -> Surface.ROTATION_90 // Landscape
+            else -> Surface.ROTATION_0 // Portrait
+        }
+    }
+    
+    private fun updateOrientation() {
+        val displayManager = requireContext().getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+        val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
+        val rotation = display?.rotation ?: Surface.ROTATION_0
+        if (rotation != currentOrientation) {
+            currentOrientation = rotation
+            cameraController?.setTargetRotation(rotation)
+        }
+    }
+    
+    private fun setupOrientationListener() {
+        orientationEventListener = object : OrientationEventListener(requireContext()) {
+            override fun onOrientationChanged(orientation: Int) {
+                if (orientation == ORIENTATION_UNKNOWN) return
+                
+                val newRotation = getRotationFromOrientation(orientation)
+                
+                if (newRotation != currentOrientation) {
+                    currentOrientation = newRotation
+                    cameraController?.setTargetRotation(newRotation)
+                }
+            }
+        }
+        orientationEventListener?.enable()
     }
 
     private fun onTakePhoto() {
@@ -154,7 +211,7 @@ class CameraFragment : Fragment() {
         preview.let { view ->
             cameraController?.switchCamera(
                 previewView = view,
-                lifecycleOwner = viewLifecycleOwner,
+                lifecycleOwner = requireActivity()
             )
         }
     }
@@ -167,7 +224,8 @@ class CameraFragment : Fragment() {
     
     override fun onDestroyView() {
         super.onDestroyView()
-        cameraController?.cleanup()
+        orientationEventListener?.disable()
+        orientationEventListener = null
         previewView = null
     }
 
@@ -184,8 +242,14 @@ class CameraFragment : Fragment() {
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
         
-        if (hasCameraPermission && previewView != null) {
-            initializeCamera()
+        if (hasCameraPermission && hasStoragePermission && previewView != null) {
+            cameraController?.switchMode(
+                previewView = previewView!!,
+                lifecycleOwner = requireActivity(),
+                newMode = CameraMode.PHOTO
+            ) ?: initializeCamera()
+            setupOrientationListener()
+            updateOrientation()
         }
     }
     
@@ -203,7 +267,17 @@ class CameraFragment : Fragment() {
             hasCameraPermission && 
             hasStoragePermission && 
             previewView != null) {
-            initializeCamera()
+            if (cameraController == null) {
+                initializeCamera()
+            } else {
+                cameraController?.switchMode(
+                    previewView = previewView!!,
+                    lifecycleOwner = viewLifecycleOwner,
+                    newMode = CameraMode.PHOTO
+                )
+            }
+            setupOrientationListener()
+            updateOrientation()
         }
     }
 
@@ -225,7 +299,15 @@ class CameraFragment : Fragment() {
                         onNavigateToVideo = { onNavigateToVideo() },
                         onNavigateToGallery = { onNavigateToGallery() },
                         onTakePhoto = { onTakePhoto() },
-                        onSwitchCamera = { onSwitchCamera(preview) }
+                        onSwitchCamera = { onSwitchCamera(preview) },
+                        onTapToFocus = { x, y ->
+                            cameraController?.focusOnPoint(x, y, preview)
+                        },
+                        onZoomChanged = { zoomRatio ->
+                            cameraController?.setZoomRatio(zoomRatio)
+                        },
+                        getCurrentZoom = { cameraController?.getCurrentZoom() ?: 1f },
+                        getZoomRange = { cameraController?.getZoomRange() ?: 1f..10f }
                     )
                 } else if (missingPermissions.isNotEmpty()) {
                     PermissionsScreen(
