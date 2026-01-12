@@ -113,8 +113,10 @@ class UnifiedCameraController(private val context: Context) {
                         .build()
                 }
                 
-                videoCapture = VideoCapture.Builder(recorder!!)
-                    .build()
+                if (videoCapture == null) {
+                    videoCapture = VideoCapture.Builder(recorder!!)
+                        .build()
+                }
                 
                 provider.unbindAll()
                 camera = provider.bindToLifecycle(
@@ -218,6 +220,7 @@ class UnifiedCameraController(private val context: Context) {
                     withAudioEnabled()
                 }
             }
+            .asPersistentRecording()
             .start(mainExecutor) { event ->
                 when (event) {
                     is VideoRecordEvent.Start -> {
@@ -255,10 +258,6 @@ class UnifiedCameraController(private val context: Context) {
         previewView: PreviewView,
         lifecycleOwner: LifecycleOwner
     ) {
-        if (isRecording()) {
-            stopRecording()
-        }
-        
         lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
             CameraSelector.LENS_FACING_FRONT
         } else {
@@ -318,11 +317,6 @@ class UnifiedCameraController(private val context: Context) {
     ) {
         if (isRecording()) {
             stopRecording()
-        }
-        
-        if (currentMode == newMode && camera != null && cameraProvider != null) {
-            preview?.setSurfaceProvider(previewView.surfaceProvider)
-            return
         }
         
         currentMode = newMode
